@@ -33,10 +33,10 @@ function envFor({ dbUrl, stock, resend }, extra = {}) {
 }
 
 /** Boot the real app against mock upstreams and a fresh database. */
-async function boot(cluster, { env = {}, stock, resend, dbUrl, autostartWorker = true } = {}) {
+async function boot(cluster, { env = {}, stock, resend, dbUrl, autostartWorker = true, embedded = false } = {}) {
   stock = stock || (await mockStock());
   resend = resend || (await mockResend());
-  dbUrl = dbUrl || (await cluster.createDb());
+  if (!embedded) dbUrl = dbUrl || (await cluster.createDb());
   const config = loadConfig(envFor({ dbUrl, stock, resend }, env));
   const app = await start(config, { port: 0, autostartWorker });
   const base = `http://127.0.0.1:${app.port}`;

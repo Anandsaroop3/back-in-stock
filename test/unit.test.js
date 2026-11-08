@@ -151,6 +151,14 @@ test('config fails fast and enforces production strength', () => {
   assert.notDeepEqual(loadConfig(ok).sessionSecret, loadConfig({ ...ok, ADMIN_PASSWORD: 'q'.repeat(12) }).sessionSecret, 'rotating the password invalidates sessions');
 });
 
+test('config: DATABASE_URL is optional (embedded storage)', () => {
+  const { loadConfig: lc } = require('../src/config');
+  const base = { STOCK_API_URL: 'https://s.x/api/', STOCK_API_KEY: 'k', RESEND_API_KEY: 'r', RESEND_BASE_URL: 'https://r.x', WEBHOOK_SECRET: 'w'.repeat(16), ADMIN_PASSWORD: 'p'.repeat(12) };
+  const c = lc(base);
+  assert.equal(c.databaseUrl, null);
+  assert.equal(c.dataDir, './data');
+});
+
 test('config: unresolved or malformed DATABASE_URL fails fast with an actionable message', () => {
   const ok = {
     STOCK_API_URL: 'https://s.x/api', STOCK_API_KEY: 'k', RESEND_API_KEY: 'r', RESEND_BASE_URL: 'https://r.x',

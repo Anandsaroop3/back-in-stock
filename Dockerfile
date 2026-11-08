@@ -17,6 +17,11 @@ COPY package.json ./
 COPY migrations ./migrations
 COPY public ./public
 COPY src ./src
+# Zero-config storage: with no DATABASE_URL the app uses an embedded PostgreSQL persisted in /data.
+# Mount a volume there to keep data across container replacements; set DATABASE_URL to use real Postgres.
+ENV DATA_DIR=/data
+RUN mkdir /data && chown node:node /data
+VOLUME ["/data"]
 # Never run as root.
 USER node
 EXPOSE 3000

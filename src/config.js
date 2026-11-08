@@ -2,7 +2,6 @@
 const crypto = require('node:crypto');
 
 const REQUIRED = [
-  'DATABASE_URL',
   'STOCK_API_URL',
   'STOCK_API_KEY',
   'RESEND_API_KEY',
@@ -52,15 +51,17 @@ function loadConfig(env = process.env) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
   // A Railway variable reference that did not resolve arrives as the literal text "${{Service.VAR}}".
-  if (env.DATABASE_URL.includes('${{')) {
+  if (env.DATABASE_URL && env.DATABASE_URL.includes('${{')) {
     throw new Error(
       'DATABASE_URL is an unresolved Railway reference. The service name in ${{Name.DATABASE_URL}} must match your Postgres service exactly, or paste the real connection string.'
     );
   }
-  try {
-    new URL(env.DATABASE_URL);
-  } catch {
-    throw new Error('DATABASE_URL is not a valid connection URL (expected postgres://user:pass@host:port/db)');
+  if (env.DATABASE_URL) {
+    try {
+      new URL(env.DATABASE_URL);
+    } catch {
+      throw new Error('DATABASE_URL is not a valid connection URL (expected postgres://user:pass@host:port/db)');
+    }
   }
   const isProd = env.NODE_ENV === 'production';
   if (isProd && env.ADMIN_PASSWORD.length < 10) {
@@ -88,7 +89,8 @@ function loadConfig(env = process.env) {
     publicUrl,
     secureCookies: publicUrl.startsWith('https://'),
     trustProxy,
-    databaseUrl: env.DATABASE_URL,
+    databaseUrl: env.DATABASE_URL || null, // unset => embedded PostgreSQL in dataDir
+    dataDir: env.DATA_DIR || './data',
     databaseSsl: bool(env.DATABASE_SSL, false),
     stock: {
       apiUrl: httpUrl('STOCK_API_URL', env.STOCK_API_URL),

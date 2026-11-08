@@ -17,16 +17,23 @@ A customer asks to be emailed when a sold-out item returns. Encore takes the req
 ```bash
 npm install
 npm run dev     # a complete simulated store + inbox, no keys: /embed, /admin (letmein-admin), inbox on :4102
-npm test        # 79 tests against a real throwaway Postgres (needs PostgreSQL installed)
+npm test        # 82 tests against a real throwaway Postgres (needs PostgreSQL installed)
 ```
 
-Run it with Docker (Postgres included): `docker compose up --build` (needs a `.env`, see `.env.example`). Diagrams of the system, database, state machine and delivery flow: **[docs/diagrams.md](docs/diagrams.md)** (render on GitHub).
+Run it with Docker and **nothing else** (embedded PostgreSQL, no database to set up):
+
+```bash
+docker build -t encore .
+docker run -p 3000:3000 -e PORT=3000 -v encore-data:/data   -e STOCK_API_URL=... -e STOCK_API_KEY=... -e RESEND_API_KEY=... -e RESEND_BASE_URL=...   -e WEBHOOK_SECRET=... -e ADMIN_PASSWORD=... encore
+```
+
+`DATABASE_URL` is optional: unset, the app stores everything in an embedded PostgreSQL under `/data` (the volume keeps it across restarts); set it to use a real PostgreSQL. Or with Postgres included: `docker compose up --build` (needs a `.env`, see `.env.example`). Diagrams of the system, database, state machine and delivery flow: **[docs/diagrams.md](docs/diagrams.md)** (render on GitHub).
 
 Real deployment and the harness hookup: see **[DEPLOY.md](DEPLOY.md)**. Design decisions and the proof for each quality attribute: **[ARCHITECTURE.md](ARCHITECTURE.md)**. How it was built, including the bugs the tests caught: **[BUILD_LOG.md](BUILD_LOG.md)**.
 
 ## Stack
 
-Node 20+, Express, PostgreSQL (`pg`), Docker (multi-stage, non-root, tini, healthcheck). Two runtime dependencies, no front-end build step, no inline script or style (strict CSP).
+Node 20+, Express, PostgreSQL (`pg`, or embedded PGlite when no `DATABASE_URL`), Docker (multi-stage, non-root, tini, healthcheck). Three runtime dependencies, no front-end build step, no inline script or style (strict CSP).
 
 ## Layout
 

@@ -52,7 +52,7 @@ gh repo create back-in-stock --private --source . --push     # or create it in t
 | Variable | Value |
 |---|---|
 | `NODE_ENV` | `production` |
-| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (reference variable) |
+| `DATABASE_URL` | optional. Leave it unset to use the embedded database (add a volume at `/data` to keep data across redeploys), or `${{Postgres.DATABASE_URL}}` for real Postgres |
 | `STOCK_API_URL`, `STOCK_API_KEY` | from the harness |
 | `RESEND_API_KEY`, `RESEND_BASE_URL` | from the harness |
 | `WEBHOOK_SECRET` | from the harness |
