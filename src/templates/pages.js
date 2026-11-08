@@ -150,7 +150,29 @@ const qs = (o) => {
   return s ? `?${s}` : '';
 };
 
-function liveFragment({ config, csrf, stats, top, releases, list, query, pages }) {
+/** 24h activity as an inline SVG (attributes only, so it passes the strict CSP). Amber = asked, green = emailed. */
+function activityChart(rows) {
+  const max = Math.max(1, ...rows.flatMap((r) => [r.requested, r.notified]));
+  const base = 104;
+  const maxH = 92;
+  const bars = rows.map((r, i) => {
+    const x = i * 19 + 4;
+    const h1 = r.requested ? Math.max(2, Math.round((r.requested / max) * maxH)) : 0;
+    const h2 = r.notified ? Math.max(2, Math.round((r.notified / max) * maxH)) : 0;
+    const label = `${String(new Date(r.hour).getUTCHours()).padStart(2, '0')}:00 UTC · ${r.requested} asked, ${r.notified} emailed`;
+    return html`<g><title>${label}</title><rect class="hit" x="${x - 2}" y="0" width="19" height="${base}"/>${
+      h1 ? html`<rect class="bar-req" x="${x}" y="${base - h1}" width="7" height="${h1}" rx="2"/>` : ''
+    }${h2 ? html`<rect class="bar-ok" x="${x + 8}" y="${base - h2}" width="7" height="${h2}" rx="2"/>` : ''}</g>`;
+  });
+  const total = rows.reduce((a, r) => a + r.requested, 0);
+  const sent = rows.reduce((a, r) => a + r.notified, 0);
+  return html`<svg class="activity" viewBox="0 0 460 128" role="img" aria-label="Requests and emails per hour, last 24 hours: ${total} asked, ${sent} emailed">
+<line class="axis" x1="0" y1="${base}" x2="460" y2="${base}"/>${bars}
+<text class="tick" x="4" y="122">-24h</text><text class="tick" x="222" y="122" text-anchor="middle">-12h</text><text class="tick" x="456" y="122" text-anchor="end">now</text></svg>
+<p class="legend"><span class="sw sw--req"></span>${total} asked <span class="sw sw--ok"></span>${sent} emailed</p>`;
+}
+
+function liveFragment({ config, csrf, stats, top, releases, list, activity = [], query, pages }) {
   const maxTop = Math.max(1, ...top.map((t) => t.waiting));
   const median = stats.median_wait_s != null ? fmtDuration(stats.median_wait_s * 1000) : '—';
   const back = qs(query);
@@ -209,10 +231,9 @@ function liveFragment({ config, csrf, stats, top, releases, list, query, pages }
         : html`<p class="muted empty-s">No one is waiting on anything. Quiet night at the box office.</p>`
     }
   </div>
-  <div class="panel panel--note">
-    <h2>How a ticket moves</h2>
-    <ol class="flow"><li><b>Waiting</b> asked, item sold out</li><li><b>Queued</b> restock verified</li><li><b>Notified</b> email accepted, punched</li></ol>
-    <p class="muted">${stats.total} tickets issued in total.</p>
+  <div class="panel">
+    <h2>Last 24 hours <small>${stats.total} tickets in total</small></h2>
+    ${activityChart(activity)}
   </div>
 </section>
 <ol class="rows">${

@@ -17,14 +17,16 @@ A customer asks to be emailed when a sold-out item returns. Encore takes the req
 ```bash
 npm install
 npm run dev     # a complete simulated store + inbox, no keys: /embed, /admin (letmein-admin), inbox on :4102
-npm test        # 77 tests against a real throwaway Postgres (needs PostgreSQL installed)
+npm test        # 79 tests against a real throwaway Postgres (needs PostgreSQL installed)
 ```
+
+Run it with Docker (Postgres included): `docker compose up --build` (needs a `.env`, see `.env.example`). Diagrams of the system, database, state machine and delivery flow: **[docs/diagrams.md](docs/diagrams.md)** (render on GitHub).
 
 Real deployment and the harness hookup: see **[DEPLOY.md](DEPLOY.md)**. Design decisions and the proof for each quality attribute: **[ARCHITECTURE.md](ARCHITECTURE.md)**. How it was built, including the bugs the tests caught: **[BUILD_LOG.md](BUILD_LOG.md)**.
 
 ## Stack
 
-Node 20+, Express, PostgreSQL (`pg`). Two runtime dependencies, no front-end build step, no inline script or style (strict CSP).
+Node 20+, Express, PostgreSQL (`pg`), Docker (multi-stage, non-root, tini, healthcheck). Two runtime dependencies, no front-end build step, no inline script or style (strict CSP).
 
 ## Layout
 
@@ -34,4 +36,6 @@ public/         embed + admin CSS/JS (served from /assets)
 migrations/     numbered SQL, applied on boot under an advisory lock
 test/           unit, integration, resilience, security + support/ (pg, hostile mock upstreams)
 scripts/sim.js  the local simulated world behind `npm run dev`
+Dockerfile, docker-compose.yml, railway.json   container build and deploy config
+docs/diagrams.md   architecture, database, state machine, sequence and deployment diagrams
 ```

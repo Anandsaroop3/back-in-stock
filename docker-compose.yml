@@ -1,0 +1,34 @@
+# One command local stack: Postgres + the app.
+#   docker compose up --build
+# Secrets come from .env (git-ignored); DATABASE_URL below overrides any value in it.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: encore
+      POSTGRES_PASSWORD: encore
+      POSTGRES_DB: encore
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U encore -d encore"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://encore:encore@db:5432/encore
+      PUBLIC_URL: http://localhost:3000
+      TRUST_PROXY: "0"
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -13,7 +13,7 @@ Total time: about 15 minutes. Everything marked **You** needs your accounts or s
 ```bash
 cd "D:\Upwork Jobs\back-in-stock"
 npm install
-npm test            # 77 tests; spins up its own throwaway Postgres, needs PostgreSQL installed (initdb on PATH)
+npm test            # 79 tests; spins up its own throwaway Postgres, needs PostgreSQL installed (initdb on PATH)
 npm run dev         # full simulation, no keys needed: http://localhost:3000/embed  /admin  (password: letmein-admin)
 ```
 
@@ -24,6 +24,14 @@ cloudflared tunnel --url http://localhost:3000     # or: ngrok http 3000
 ```
 
 Then register `https://<your-tunnel>/webhooks/stock` as the webhook URL in the harness dashboard.
+
+### Docker (alternative to step 1)
+
+```bash
+docker compose up --build     # app on http://localhost:3000 with its own Postgres; reads secrets from .env
+```
+
+The image is multi-stage (`npm ci --omit=dev`, then `node:22-alpine` with tini, running as the non-root `node` user) and has a `HEALTHCHECK` on `/healthz`. Railway builds from this Dockerfile automatically (`railway.json`).
 
 ## 2. Push the code to GitHub (You)
 

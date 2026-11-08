@@ -153,6 +153,17 @@ class Repo {
     return rows;
   }
 
+  /** Requests created and emails sent per hour for the last 24 hours (oldest first). */
+  async activity() {
+    const { rows } = await this.pool.query(`
+      SELECT g.h AS hour,
+        (SELECT count(*)::int FROM requests WHERE created_at  >= g.h AND created_at  < g.h + interval '1 hour') AS requested,
+        (SELECT count(*)::int FROM requests WHERE notified_at >= g.h AND notified_at < g.h + interval '1 hour') AS notified
+        FROM generate_series(date_trunc('hour', now()) - interval '23 hours', date_trunc('hour', now()), interval '1 hour') AS g(h)
+       ORDER BY g.h`);
+    return rows;
+  }
+
   async recentReleases(n = 10) {
     const { rows } = await this.pool.query(
       `SELECT sku, max(product_name) AS name, count(*)::int AS n, max(notified_at) AS at

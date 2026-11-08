@@ -197,3 +197,16 @@ body.login { display: grid; place-items: center; padding: 24px; }
   .view-wall .rows { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .marquee__track { transform: none; } }
+
+/* ---------- 24h activity chart ---------- */
+.activity { width: 100%; height: auto; display: block; overflow: visible; }
+.activity .axis { stroke: var(--line); stroke-width: 1; }
+.activity .tick { fill: var(--muted); font: 600 10px var(--mono); letter-spacing: .08em; }
+.activity .hit { fill: transparent; }
+.activity g:hover .hit { fill: rgba(255, 255, 255, .05); }
+.activity .bar-req { fill: var(--amber); }
+.activity .bar-ok { fill: var(--ok); }
+.legend { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font: 600 12px var(--mono); color: var(--muted); }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-left: 10px; }
+.sw:first-child { margin-left: 0; }
+.sw--req { background: var(--amber); } .sw--ok { background: var(--ok); }

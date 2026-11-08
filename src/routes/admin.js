@@ -156,16 +156,17 @@ module.exports = function adminRoutes({ config, repo }) {
       const q = clampStr(String(first(req.query.q) ?? ''), 100);
       const page = Math.min(1000, Math.max(1, parseInt(first(req.query.page), 10) || 1));
       const view = first(req.query.view) === 'wall' ? 'wall' : 'list';
-      const [list, stats, top, releases] = await Promise.all([
+      const [list, stats, top, releases, activity] = await Promise.all([
         repo.list({ status, q, limit: PAGE_SIZE, offset: (page - 1) * PAGE_SIZE }),
         repo.stats(),
         repo.topDemand(6),
         repo.recentReleases(10),
+        repo.activity(),
       ]);
       const csrf = req.admin.via === 'cookie' ? session.csrfToken(secret, req.admin.nonce) : null;
       res.type('html').send(
         dashboardPage({
-          config, csrf, stats, top, releases, list,
+          config, csrf, stats, top, releases, list, activity,
           query: { status, q, page, view },
           pages: Math.max(1, Math.ceil(list.total / PAGE_SIZE)),
           fragment: first(req.query.fragment) === '1',

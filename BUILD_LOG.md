@@ -20,13 +20,14 @@ Built with Claude Code (an AI pair-programmer) driving a design-first, test-firs
 | 4 | **real browser** (curl-based tests missed it) | `Referrer-Policy: no-referrer` makes browsers send `Origin: null` on form posts, so my own CSRF guard rejected the **legitimate admin login**. | Trust the unforgeable `Sec-Fetch-Site` header first, `Origin` as fallback; policy changed to `same-origin`; regression test |
 | 5 | browser | "Sending now" stamp invisible in dark mode; "punched" hole overlapped a timestamp in Wall view; KPI tile orphan gap; email button wrapped; "Time in line: 0s" looked silly | CSS and template fixes |
 | 7 | **the real harness** (my mocks hid it) | The real stock API answers `200 {sku, quantity:0, in_stock:false}` for ANY sku (never 404) and its per-SKU payload has no name. My code stored requests for nonexistent items and would have emailed "TEE-ORG-WHT-M is back". | Per-SKU call stays the source of truth for stock; names come from the catalogue (cache, refresh on miss, rate-limited); off-catalogue SKUs are accepted but flagged `known:false` because the harness lets testers hand-set stock for them; mock now mimics the real API; regression test |
+| 8 | proposal requirements | A working Dockerfile was required and missing. | Multi-stage Dockerfile, compose file, railway.json using it, .dockerignore. The file tree it produces was verified to load the app; `docker build` itself has not been run (Docker is not installed on this machine). |
 | 6 | browser console | Half-typed text (`ke`) was looked up as a SKU, causing needless 404s | exact-match lookups only |
 
 Items 1 to 3 were found by tests I wrote, not by luck: the value of the suite is that it catches regressions in exactly the behaviours the brief says will be probed.
 
 ## What is verified
 
-- `npm test`: **77 tests, all passing** (unit 12, integration 16, resilience 16, security 33). Run twice back to back, about 60 s each, no flakes.
+- `npm test`: **79 tests, all passing** (unit 12, integration 18, resilience 16, security 33). Run twice back to back, about 60 s each, no flakes.
 - `npm audit --omit=dev`: 0 vulnerabilities (two runtime dependencies).
 - UI checked in a real browser: embed (dark, light, custom accent, phone width, tear animation, both success states), login, admin list and Wall views, and the email at desktop and phone widths in light and dark.
 

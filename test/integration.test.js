@@ -265,3 +265,24 @@ test('REAL-PROVIDER BEHAVIOUR: per-SKU payload has no name; any SKU is valid; ha
     t.stock.minimalLive = false;
   }
 });
+
+test('admin dashboard: 24h activity chart renders, CSP-clean, and counts what happened', async () => {
+  const r = await t.req('GET', '/admin', { headers: { authorization: 'Basic ' + Buffer.from(`admin:${ADMIN}`).toString('base64'), accept: 'text/html' } });
+  assert.equal(r.status, 200);
+  assert.match(r.text, /<svg class="activity"/);
+  assert.equal((r.text.match(/<g><title>/g) || []).length, 24, 'one slot per hour');
+  assert.match(r.text, /bar-req/, 'requests were made in the last hour');
+  assert.match(r.text, /bar-ok/, 'emails were sent in the last hour');
+  assert.ok(!/\sstyle="/i.test(r.text), 'no inline style attributes (strict CSP)');
+  assert.ok(!/<script(?![^>]*\bsrc=)/i.test(r.text), 'no inline scripts');
+});
+
+test('migrations are ordered, recorded, and idempotent (002 index present, re-run is a no-op)', async () => {
+  const done = (await t.pool.query('SELECT name FROM schema_migrations ORDER BY name')).rows.map((x) => x.name);
+  assert.deepEqual(done, ['001_init.sql', '002_notified_index.sql']);
+  const idx = await t.pool.query(`SELECT 1 FROM pg_indexes WHERE indexname='requests_notified_at'`);
+  assert.equal(idx.rowCount, 1);
+  const { migrate } = require('../src/db');
+  await migrate(t.pool);
+  assert.equal((await t.pool.query('SELECT count(*)::int n FROM schema_migrations')).rows[0].n, 2);
+});

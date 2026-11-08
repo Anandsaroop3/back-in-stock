@@ -115,6 +115,8 @@
   function showProduct(sku) {
     if (current === sku) return;
     current = sku;
+    var chip = $('product'); chip.hidden = false; chip.classList.add('is-loading');
+    $('productName').textContent = 'Loading item'; $('productState').textContent = 'Checking stock';
     fetch('/api/products/' + encodeURIComponent(sku)).then(function (r) { return r.ok ? r.json() : null; }).then(function (p) {
       if (!p || current !== sku) { if (!p) hideProduct(); return; }
       $('productName').textContent = p.name;
@@ -125,8 +127,18 @@
       if (p.waiting > 0) st.appendChild(document.createTextNode(' · ' + p.waiting + ' waiting'));
       var img = $('productImg');
       if (p.image) { img.src = p.image; img.hidden = false; } else { img.hidden = true; img.removeAttribute('src'); }
-      $('product').hidden = false; postHeight();
+      $('product').classList.remove('is-loading'); $('product').hidden = false; postHeight();
     }).catch(function () { /* decorative */ });
+  }
+
+  /* ---- ticket follows the pointer: a slight tilt and a moving sheen (fine pointers, motion allowed) ---- */
+  if (window.matchMedia && matchMedia('(hover: hover) and (pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    ticket.addEventListener('pointermove', function (e) {
+      var r = ticket.getBoundingClientRect(), px = (e.clientX - r.left) / r.width - 0.5, py = (e.clientY - r.top) / r.height - 0.5;
+      ticket.style.setProperty('--ry', (px * 4).toFixed(2) + 'deg'); ticket.style.setProperty('--rx', (-py * 3).toFixed(2) + 'deg');
+      ticket.style.setProperty('--gx', ((px + 0.5) * 100).toFixed(1) + '%'); ticket.style.setProperty('--gy', ((py + 0.5) * 100).toFixed(1) + '%');
+    });
+    ticket.addEventListener('pointerleave', function () { ticket.style.setProperty('--rx', '0deg'); ticket.style.setProperty('--ry', '0deg'); });
   }
 
   /* ---- submit ---- */
