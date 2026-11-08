@@ -1,0 +1,231 @@
+/* Encore embed: the Waiting Room Ticket.
+   One idea: the form IS a ticket. Fill it in, the stub tears off, you hold your place in line. */
+:root {
+  --paper: #f7f2e7;
+  --paper-2: #efe8d8;
+  --ink: #17140f;
+  --muted: #6f6552;
+  --line: #d4c9b2;
+  --accent: #e5412d;
+  --accent-ink: #fff;
+  --ok: #1f8a4c;
+  --err: #b42318;
+  --radius: 18px;
+  --notch: 11px;
+  --stub: 150px;
+  --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #1f1b14; --paper-2: #2a251b; --ink: #f4eee2; --muted: #a39a87; --line: #40382a; --accent-ink: #17140f;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #1f1b14; --paper-2: #2a251b; --ink: #f4eee2; --muted: #a39a87; --line: #40382a; --accent-ink: #17140f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: transparent; }
+body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+
+.stage { padding: 14px; max-width: 640px; margin: 0 auto; }
+.compact .stage { padding: 6px; }
+
+/* ---------- the ticket ---------- */
+.ticket, .issued {
+  display: flex;
+  filter: drop-shadow(0 14px 18px rgba(23, 20, 15, .16)) drop-shadow(0 2px 3px rgba(23, 20, 15, .12));
+}
+.ticket__main, .issued__main, .ticket__stub {
+  background: var(--paper);
+  position: relative;
+}
+.ticket__main, .issued__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 26px 28px 22px;
+  border-radius: var(--radius) 0 0 var(--radius);
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+          mask:
+    radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+}
+/* paper grain */
+.ticket__main::before, .issued__main::before, .ticket__stub::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .07; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+.ticket__stub {
+  flex: 0 0 var(--stub);
+  width: var(--stub);
+  padding: 22px 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background-image: linear-gradient(var(--paper), var(--paper));
+  -webkit-mask:
+    radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+          mask:
+    radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+  transform-origin: 0% 0%;
+}
+/* the perforation: dashed rule down the join */
+.ticket__stub::after {
+  content: ""; position: absolute; left: 0; top: calc(var(--notch) + 4px); bottom: calc(var(--notch) + 4px);
+  border-left: 2px dashed var(--line);
+}
+.stub__label { font: 700 11px/1 var(--mono); letter-spacing: .28em; text-transform: uppercase; writing-mode: horizontal-tb; }
+.stub__sub { font: 600 10px/1 var(--mono); letter-spacing: .3em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.stub__no { font: 700 12px/1.2 var(--mono); letter-spacing: .12em; color: var(--muted); text-align: center; word-break: break-all; }
+.barcode { width: 100%; height: 64px; display: block; color: var(--ink); }
+.barcode rect { fill: currentColor; }
+.barcode--idle rect { opacity: .22; }
+.barcode rect { transition: opacity .25s, height .35s cubic-bezier(.3,1.4,.5,1); }
+
+/* ---------- type ---------- */
+.ticket__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.mark { font: 800 12px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; }
+.mark i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+.kicker { font: 600 11px/1.2 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.title { font: 700 clamp(27px, 6.4vw, 38px)/1.04 var(--serif); letter-spacing: -.02em; margin: 0 0 20px; text-wrap: balance; }
+
+/* ---------- fields: fill-in lines on a ticket ---------- */
+.field { margin: 0 0 16px; position: relative; }
+label { display: block; font: 700 10px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+input[type=text], input[type=email] {
+  width: 100%; font: 500 17px/1.3 var(--sans); color: var(--ink);
+  background: transparent; border: 0; border-bottom: 2px solid var(--ink); border-radius: 0;
+  padding: 8px 0 9px; outline: none; transition: box-shadow .2s, border-color .2s;
+}
+input::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); font-weight: 400; }
+input:focus { box-shadow: 0 2px 0 0 var(--accent); border-bottom-color: var(--accent); }
+input[aria-invalid="true"] { border-bottom-color: var(--err); box-shadow: 0 2px 0 0 var(--err); }
+.err { color: var(--err); font: 600 13px/1.35 var(--sans); margin: 6px 0 0; min-height: 0; display: none; }
+.err:not(:empty) { display: block; }
+.err--form { text-align: center; margin-top: 10px; }
+
+/* combobox */
+.combo { position: relative; }
+.combo__list {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 6px); margin: 0; padding: 6px; list-style: none;
+  max-height: 248px; overflow: auto; background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 18px 34px -10px rgba(23,20,15,.35);
+}
+.combo__list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 15px; }
+.combo__list li[aria-selected="true"], .combo__list li:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.combo__list code { font: 500 11px var(--mono); color: var(--muted); margin-left: 8px; }
+.badge { font: 700 9px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; padding: 4px 7px; border-radius: 99px; white-space: nowrap; }
+.badge--out { background: color-mix(in srgb, var(--accent) 18%, transparent); color: var(--accent); }
+.badge--in { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.combo__empty { color: var(--muted); cursor: default !important; }
+
+/* product chip */
+.product { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 10px 12px; background: var(--paper-2); border-radius: 12px; border: 1px dashed var(--line); animation: pop .3s ease-out; }
+.product img { border-radius: 8px; object-fit: cover; background: var(--line); }
+.product__meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.product__meta strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product__meta span { font: 600 11px var(--mono); letter-spacing: .06em; color: var(--muted); }
+.product__meta .out { color: var(--accent); }
+.product__meta .in { color: var(--ok); }
+
+/* ---------- CTA ---------- */
+.cta {
+  position: relative; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  font: 700 16px/1 var(--sans); letter-spacing: .01em; color: var(--paper); background: var(--ink);
+  border: 0; border-radius: 12px; padding: 16px 20px; cursor: pointer; margin-top: 8px;
+  transition: transform .15s, box-shadow .2s, background .2s;
+  box-shadow: 0 6px 0 -2px color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.cta:hover { transform: translateY(-1px); background: var(--accent); color: var(--accent-ink); }
+.cta:active { transform: translateY(2px); box-shadow: 0 2px 0 -2px transparent; }
+.cta:focus-visible, .ghost:focus-visible, .link:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.cta__arrow { transition: transform .2s; }
+.cta:hover .cta__arrow { transform: translateX(4px); }
+.cta__spin { display: none; width: 16px; height: 16px; border: 2.5px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; }
+.cta.is-busy { pointer-events: none; opacity: .85; }
+.cta.is-busy .cta__spin { display: inline-block; }
+.cta.is-busy .cta__arrow { display: none; }
+.fine { font: 500 12px/1.4 var(--sans); color: var(--muted); text-align: center; margin: 12px 0 0; }
+
+/* ---------- tear + issued ---------- */
+.ticket.is-tearing .ticket__stub { animation: tear .75s cubic-bezier(.55, 0, .25, 1) forwards; }
+.ticket.is-tearing .ticket__main { animation: settle .6s ease-in forwards .1s; }
+@keyframes tear {
+  0% { transform: none; opacity: 1; }
+  22% { transform: translate(6px, -3px) rotate(2.5deg); }
+  100% { transform: translate(86px, 170px) rotate(19deg); opacity: 0; }
+}
+@keyframes settle { to { opacity: 0; transform: translateY(6px) scale(.985); } }
+@keyframes pop { from { opacity: 0; transform: scale(.96) translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes thump { 0% { opacity: 0; transform: rotate(-9deg) scale(2.2); } 55% { opacity: 1; transform: rotate(-9deg) scale(.93); } 100% { opacity: .92; transform: rotate(-9deg) scale(1); } }
+@keyframes beat { 0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 50% { transform: scale(1.18); box-shadow: 0 0 0 7px transparent; } }
+
+.issued { animation: pop .5s cubic-bezier(.2, .9, .3, 1.2); }
+.issued__main { padding-top: 24px; }
+.stamp {
+  position: absolute; right: 22px; top: 18px; transform: rotate(-9deg); border: 2.5px solid var(--accent); color: var(--accent);
+  font: 800 12px/1 var(--mono); letter-spacing: .22em; text-transform: uppercase; padding: 7px 10px; border-radius: 6px; opacity: .92;
+  animation: thump .5s .35s both cubic-bezier(.2, .9, .3, 1); mix-blend-mode: multiply;
+}
+.issued__title { font: 700 clamp(26px, 6vw, 36px)/1.05 var(--serif); letter-spacing: -.02em; margin: 6px 0 10px; outline: none; max-width: 85%; }
+.issued__title em { font-style: normal; color: var(--accent); }
+.issued__lede { margin: 0 0 16px; font-size: 15px; line-height: 1.5; color: color-mix(in srgb, var(--ink) 82%, transparent); }
+.dots { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; padding: 0; margin: 0 0 14px; }
+.dots li { width: 12px; height: 12px; border-radius: 50%; background: var(--line); animation: pop .35s both; }
+.dots li.me { background: var(--accent); width: 15px; height: 15px; margin-top: -1.5px; animation: pop .35s both, beat 1.8s 1s infinite; }
+.dots li.more { width: auto; height: auto; background: none; font: 700 11px var(--mono); color: var(--muted); border-radius: 0; }
+.issued__next { font: 600 12px/1.45 var(--mono); letter-spacing: .04em; color: var(--muted); margin: 0 0 14px; }
+.issued__actions { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.ghost { font: 700 13px var(--sans); color: var(--ink); background: transparent; border: 1.5px solid var(--ink); border-radius: 10px; padding: 10px 14px; cursor: pointer; transition: background .15s, color .15s; }
+.ghost:hover { background: var(--ink); color: var(--paper); }
+.link { font: 700 14px var(--sans); color: var(--accent); text-decoration: none; }
+.link:hover { text-decoration: underline; }
+
+/* multiply-blended ink looks right on light paper but vanishes on dark paper */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .stamp { mix-blend-mode: normal; } }
+:root[data-theme="dark"] .stamp { mix-blend-mode: normal; }
+
+/* ---------- narrow (phones, narrow store columns): ticket turns sideways ---------- */
+@media (max-width: 540px) {
+  :root { --stub: 76px; }
+  .stage { padding: 10px; }
+  .ticket, .issued { flex-direction: column; }
+  .ticket__main, .issued__main {
+    padding: 22px 20px 18px; border-radius: var(--radius) var(--radius) 0 0;
+    -webkit-mask:
+      radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) right / 51% 100% no-repeat;
+            mask:
+      radial-gradient(circle var(--notch) at 0 100%, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 100%, #0000 97%, #000) right / 51% 100% no-repeat;
+  }
+  .ticket__stub {
+    flex-basis: var(--stub); width: auto; flex-direction: row; justify-content: space-between; gap: 14px; padding: 12px 20px;
+    border-radius: 0 0 var(--radius) var(--radius); transform-origin: 50% 0;
+    -webkit-mask:
+      radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) right / 51% 100% no-repeat;
+            mask:
+      radial-gradient(circle var(--notch) at 0 0, #0000 97%, #000) left / 51% 100% no-repeat,
+      radial-gradient(circle var(--notch) at 100% 0, #0000 97%, #000) right / 51% 100% no-repeat;
+  }
+  .ticket__stub::after { left: calc(var(--notch) + 4px); right: calc(var(--notch) + 4px); top: 0; bottom: auto; border-left: 0; border-top: 2px dashed var(--line); }
+  .stub__label, .stub__sub { display: none; }
+  .barcode { width: 46%; height: 44px; }
+  .stub__no { text-align: right; font-size: 11px; }
+  .ticket.is-tearing .ticket__stub { animation-name: tear-m; }
+  .issued__title { max-width: 100%; margin-top: 30px; }
+  .stamp { top: 16px; right: 16px; }
+}
+@keyframes tear-m { 0% { transform: none; opacity: 1; } 25% { transform: translate(-3px, 5px) rotate(-1.5deg); } 100% { transform: translate(40px, 140px) rotate(12deg); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
