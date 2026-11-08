@@ -63,7 +63,7 @@ module.exports = function publicRoutes({ config, repo, stock, worker }) {
       const p = await stock.getProduct(sku);
       if (!p) return apiError(res, 404, 'unknown_sku', 'We could not find that item.');
       const waiting = await repo.waitingCount(p.sku);
-      return res.json({ sku: p.sku, name: p.name, image: p.image, price: p.price, url: p.url, inStock: p.inStock, waiting });
+      return res.json({ sku: p.sku, name: p.name, image: p.image, price: p.price, url: p.url, inStock: p.inStock, known: p.known, waiting });
     } catch (e) {
       if (e.name === 'StockError') return apiError(res, 503, 'stock_unavailable', 'Stock lookup is temporarily unavailable.');
       return next(e);
@@ -115,7 +115,7 @@ module.exports = function publicRoutes({ config, repo, stock, worker }) {
         ticket: ticketCode(config.sessionSecret, email, sku),
         position,
         inStockNow: product.inStock,
-        product: { sku, name: product.name, image: product.image, url: product.url },
+        product: { sku, name: product.name, image: product.image, url: product.url, known: product.known },
       });
     } catch (e) {
       return next(e);

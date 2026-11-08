@@ -20,6 +20,7 @@ async function mockStock({ key = 'stock-key', port: fixedPort = 0 } = {}) {
   const state = {
     key,
     products: new Map(),
+    minimalLive: false, // true: per-SKU payload has no name/image, like the real provider
     behaviours: [], // queue of 'status:503' | 'hang' consumed per request
     calls: [],
     set(sku, patch) {
@@ -53,10 +54,11 @@ async function mockStock({ key = 'stock-key', port: fixedPort = 0 } = {}) {
     const sku = decodeURIComponent(path.slice(1));
     const p = state.products.get(sku);
     if (!p) {
-      res.writeHead(404).end('{"error":"not found"}');
+      res.end(JSON.stringify({ sku, quantity: 0, in_stock: false })); // what the real provider does
       return;
     }
-    res.end(JSON.stringify(view(p)));
+    const v = view(p);
+    res.end(JSON.stringify(state.minimalLive ? { sku: v.sku, quantity: v.quantity, in_stock: v.in_stock } : v));
   });
   const port = await listen(server, fixedPort);
   return Object.assign(state, {

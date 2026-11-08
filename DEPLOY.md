@@ -13,7 +13,7 @@ Total time: about 15 minutes. Everything marked **You** needs your accounts or s
 ```bash
 cd "D:\Upwork Jobs\back-in-stock"
 npm install
-npm test            # 76 tests; spins up its own throwaway Postgres, needs PostgreSQL installed (initdb on PATH)
+npm test            # 77 tests; spins up its own throwaway Postgres, needs PostgreSQL installed (initdb on PATH)
 npm run dev         # full simulation, no keys needed: http://localhost:3000/embed  /admin  (password: letmein-admin)
 ```
 

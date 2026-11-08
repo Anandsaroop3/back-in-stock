@@ -120,7 +120,7 @@
       $('productName').textContent = p.name;
       var st = $('productState'); st.textContent = '';
       var s = document.createElement('span'); s.className = p.inStock ? 'in' : 'out';
-      s.textContent = p.inStock ? 'IN STOCK NOW' : 'SOLD OUT';
+      s.textContent = p.known === false ? 'NOT IN CATALOGUE · WE’LL STILL WATCH IT' : (p.inStock ? 'IN STOCK NOW' : 'SOLD OUT');
       st.appendChild(s);
       if (p.waiting > 0) st.appendChild(document.createTextNode(' · ' + p.waiting + ' waiting'));
       var img = $('productImg');

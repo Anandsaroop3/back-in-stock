@@ -53,7 +53,10 @@ test('catalogue and product lookups feed the form', async () => {
   assert.equal(p.status, 200);
   assert.equal(p.data.name, 'Aero Kettle');
   assert.equal(p.data.inStock, false);
-  assert.equal((await t.req('GET', '/api/products/NOPE-1')).status, 404);
+  const unk = await t.req('GET', '/api/products/NOPE-1');
+  assert.equal(unk.status, 200, 'the provider treats any SKU as valid (quantity 0)');
+  assert.equal(unk.data.known, false);
+  assert.equal(p.data.known, true);
   assert.equal((await t.req('GET', '/api/products/bad%20sku')).status, 400);
 });
 
@@ -89,7 +92,6 @@ test('validation: every bad input gets a precise 4xx and writes nothing', async 
   const cases = [
     [{ email: 'nope', sku: 'KET-1' }, 400, 'invalid_email'],
     [{ email: 'a@b.com', sku: "x' OR 1=1--" }, 400, 'invalid_sku'],
-    [{ email: 'a@b.com', sku: 'DOES-NOT-EXIST' }, 404, 'unknown_sku'],
     [{ email: 'a@b.com' }, 400, 'invalid_sku'],
     [{ sku: 'KET-1' }, 400, 'invalid_email'],
     [{ email: ['a@b.com'], sku: 'KET-1' }, 400, 'invalid_email'],
@@ -234,4 +236,32 @@ test('health endpoint reflects the database', async () => {
   const r = await t.req('GET', '/healthz');
   assert.equal(r.status, 200);
   assert.deepEqual(r.data, { ok: true });
+});
+
+test('REAL-PROVIDER BEHAVIOUR: per-SKU payload has no name; any SKU is valid; hand-set stock on an off-catalogue SKU still notifies', async () => {
+  t.app.stock.missRefreshMs = 0; // deterministic: a catalogue miss refreshes immediately
+  t.stock.minimalLive = true; // per-SKU answers {sku, quantity, in_stock} only, like the real harness
+  try {
+    t.stock.set('REAL-1', { name: 'Gooseneck Kettle, Matte Black', quantity: 0 });
+    const known = await t.subscribe('real1@example.com', 'REAL-1');
+    assert.equal(known.data.product.name, 'Gooseneck Kettle, Matte Black', 'name comes from the catalogue');
+    assert.equal(known.data.product.known, true);
+
+    // not in the catalogue: the provider lets you set stock for it by hand, so it must be accepted
+    const off = await t.subscribe('real2@example.com', 'HANDSET-9');
+    assert.equal(off.status, 200);
+    assert.equal(off.data.product.known, false);
+    assert.equal(off.data.product.name, 'HANDSET-9');
+
+    t.stock.set('REAL-1', { quantity: 3 });
+    t.stock.products.set('HANDSET-9', { sku: 'HANDSET-9', name: 'HANDSET-9', quantity: 4 }); // "Set stock by hand"
+    await t.webhook({ event_id: 'real-1', sku: 'REAL-1', quantity: 3 });
+    await t.webhook({ event_id: 'real-2', sku: 'HANDSET-9', quantity: 4 });
+    await waitFor(() => inboxFor('real1@example.com').length && inboxFor('real2@example.com').length, { msg: 'both emails' });
+    assert.equal(inboxFor('real1@example.com')[0].subject, 'Gooseneck Kettle, Matte Black is back in stock', 'enriched name reaches the email');
+    assert.match(inboxFor('real2@example.com')[0].subject, /HANDSET-9 is back in stock/);
+  } finally {
+    t.app.stock.missRefreshMs = 2000;
+    t.stock.minimalLive = false;
+  }
 });

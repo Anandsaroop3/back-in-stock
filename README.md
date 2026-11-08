@@ -17,7 +17,7 @@ A customer asks to be emailed when a sold-out item returns. Encore takes the req
 ```bash
 npm install
 npm run dev     # a complete simulated store + inbox, no keys: /embed, /admin (letmein-admin), inbox on :4102
-npm test        # 76 tests against a real throwaway Postgres (needs PostgreSQL installed)
+npm test        # 77 tests against a real throwaway Postgres (needs PostgreSQL installed)
 ```
 
 Real deployment and the harness hookup: see **[DEPLOY.md](DEPLOY.md)**. Design decisions and the proof for each quality attribute: **[ARCHITECTURE.md](ARCHITECTURE.md)**. How it was built, including the bugs the tests caught: **[BUILD_LOG.md](BUILD_LOG.md)**.

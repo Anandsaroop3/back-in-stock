@@ -19,19 +19,22 @@ Built with Claude Code (an AI pair-programmer) driving a design-first, test-firs
 | 3 | security suite | The stock client treated `[1,2,3]` or `{}` returned with a 200 as "item exists, sold out" and would have stored requests for it. | `normalize()` rejects arrays and objects with no stock fields |
 | 4 | **real browser** (curl-based tests missed it) | `Referrer-Policy: no-referrer` makes browsers send `Origin: null` on form posts, so my own CSRF guard rejected the **legitimate admin login**. | Trust the unforgeable `Sec-Fetch-Site` header first, `Origin` as fallback; policy changed to `same-origin`; regression test |
 | 5 | browser | "Sending now" stamp invisible in dark mode; "punched" hole overlapped a timestamp in Wall view; KPI tile orphan gap; email button wrapped; "Time in line: 0s" looked silly | CSS and template fixes |
+| 7 | **the real harness** (my mocks hid it) | The real stock API answers `200 {sku, quantity:0, in_stock:false}` for ANY sku (never 404) and its per-SKU payload has no name. My code stored requests for nonexistent items and would have emailed "TEE-ORG-WHT-M is back". | Per-SKU call stays the source of truth for stock; names come from the catalogue (cache, refresh on miss, rate-limited); off-catalogue SKUs are accepted but flagged `known:false` because the harness lets testers hand-set stock for them; mock now mimics the real API; regression test |
 | 6 | browser console | Half-typed text (`ke`) was looked up as a SKU, causing needless 404s | exact-match lookups only |
 
 Items 1 to 3 were found by tests I wrote, not by luck: the value of the suite is that it catches regressions in exactly the behaviours the brief says will be probed.
 
 ## What is verified
 
-- `npm test`: **76 tests, all passing** (unit 12, integration 15, resilience 16, security 33). Run twice back to back, about 60 s each, no flakes.
+- `npm test`: **77 tests, all passing** (unit 12, integration 16, resilience 16, security 33). Run twice back to back, about 60 s each, no flakes.
 - `npm audit --omit=dev`: 0 vulnerabilities (two runtime dependencies).
 - UI checked in a real browser: embed (dark, light, custom accent, phone width, tear animation, both success states), login, admin list and Wall views, and the email at desktop and phone widths in light and dark.
 
+- **Live round trip against the real harness (local app, throwaway DB):** created a request, restocked the item from the harness dashboard, and the reconcile sweep (no webhook, since localhost is unreachable) emailed the customer once; the harness inbox shows it as accepted, with the catalogue name in the subject.
+
 ## What is NOT verified (please read)
 
-- **Not run against the real harness.** No keys were available, so everything was tested against my own mocks. The one assumption I could not check is the exact JSON of the stock API (I rely on `quantity` and `in_stock`). Run the DEPLOY.md verification steps to confirm.
+- **Real webhooks have not been received yet.** The harness cannot reach localhost, so the webhook path was only tested with my own mocks. It becomes live once the app has a public URL (tunnel or Railway) saved in the harness dashboard.
 - **Not deployed yet.** Railway needs your account; see DEPLOY.md.
 - **Email rendering was checked in a browser only**, not in Gmail, Outlook or Apple Mail. The markup is conservative (tables, inline styles, plain-text twin), but I have not seen it in those clients.
 - The sign-up storm test was added after the fix and passes; I did not re-run it against the unfixed code to prove it would have failed there.

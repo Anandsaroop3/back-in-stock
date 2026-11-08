@@ -89,6 +89,8 @@ class StockClient {
     this.timeoutMs = timeoutMs;
     this.fetch = fetchImpl;
     this._cat = { at: 0, data: null };
+    this.missRefreshMs = 2000; // min gap between catalogue refreshes triggered by an unknown SKU
+    this._lastMissRefresh = 0;
   }
 
   async _get(urlPath) {
@@ -118,13 +120,40 @@ class StockClient {
     }
   }
 
-  /** @returns normalised product, or null if the SKU does not exist. Throws StockError when unreachable. */
+  /**
+   * Live stock for one SKU, enriched with catalogue details.
+   *
+   * Observed against the real provider (not documented): the per-SKU endpoint answers 200
+   * `{sku, quantity:0, in_stock:false}` for ANY sku, known or not, and carries no name or image.
+   * So the per-SKU call is the source of truth for *stock*, the catalogue supplies the *name*,
+   * and `known` says whether the catalogue has heard of it. Unknown SKUs are still valid: the
+   * provider lets you set stock for them.
+   *
+   * @returns product, or null if the provider reports 404. Throws StockError when unreachable.
+   */
   async getProduct(sku) {
     const r = await this._get(`/${encodeURIComponent(sku)}`);
     if (r.status === 404) return null;
-    const p = normalize(r.body, sku);
-    if (!p) throw new StockError('stock api returned unexpected shape');
-    return p;
+    const live = normalize(r.body, sku);
+    if (!live) throw new StockError('stock api returned unexpected shape');
+    const named = live.name !== live.sku;
+    let entry = null;
+    if (!named) {
+      try {
+        const find = (cat) => cat.find((p) => p.sku.toLowerCase() === sku.toLowerCase()) || null;
+        entry = find(await this.getCatalogue({ maxAgeMs: 15000 }));
+        // A miss may just mean the cache predates this product: refresh once, at most every 2s,
+        // so a stream of unknown SKUs cannot turn into a stream of upstream calls.
+        if (!entry && Date.now() - this._lastMissRefresh >= this.missRefreshMs) {
+          this._lastMissRefresh = Date.now();
+          entry = find(await this.getCatalogue());
+        }
+      } catch {
+        /* names are cosmetic: never fail a stock check because the catalogue is down */
+      }
+    }
+    if (entry) return { ...entry, quantity: live.quantity, inStock: live.inStock, known: true };
+    return { ...live, known: named };
   }
 
   async getCatalogue({ maxAgeMs = 0 } = {}) {
