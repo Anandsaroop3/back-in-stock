@@ -45,6 +45,8 @@ async function main() {
 }
 
 main().catch((e) => {
-  logger.error('fatal startup error', { err: e.message });
+  // AggregateError (e.g. ECONNREFUSED on both IPv4 and IPv6) has an empty message: surface code and causes too
+  const parts = [e.message, e.code, ...(e.errors || []).map((x) => x.message || x.code)].filter(Boolean);
+  logger.error('fatal startup error', { err: parts.join(' | ') || e.name || String(e) });
   process.exit(1);
 });

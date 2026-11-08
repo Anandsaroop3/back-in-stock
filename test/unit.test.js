@@ -150,3 +150,13 @@ test('config fails fast and enforces production strength', () => {
   assert.throws(() => loadConfig({ ...ok, PORT: '99999' }), /Invalid integer/);
   assert.notDeepEqual(loadConfig(ok).sessionSecret, loadConfig({ ...ok, ADMIN_PASSWORD: 'q'.repeat(12) }).sessionSecret, 'rotating the password invalidates sessions');
 });
+
+test('config: unresolved or malformed DATABASE_URL fails fast with an actionable message', () => {
+  const ok = {
+    STOCK_API_URL: 'https://s.x/api', STOCK_API_KEY: 'k', RESEND_API_KEY: 'r', RESEND_BASE_URL: 'https://r.x',
+    WEBHOOK_SECRET: 'w'.repeat(20), ADMIN_PASSWORD: 'p'.repeat(12),
+  };
+  assert.throws(() => loadConfig({ ...ok, DATABASE_URL: '${{Postgres.DATABASE_URL}}' }), /unresolved Railway reference/);
+  assert.throws(() => loadConfig({ ...ok, DATABASE_URL: 'not a url' }), /not a valid connection URL/);
+  assert.ok(loadConfig({ ...ok, DATABASE_URL: 'postgresql://u:p@postgres.railway.internal:5432/railway' }));
+});

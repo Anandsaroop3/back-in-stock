@@ -51,6 +51,17 @@ function loadConfig(env = process.env) {
   if (missing.length) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
+  // A Railway variable reference that did not resolve arrives as the literal text "${{Service.VAR}}".
+  if (env.DATABASE_URL.includes('${{')) {
+    throw new Error(
+      'DATABASE_URL is an unresolved Railway reference. The service name in ${{Name.DATABASE_URL}} must match your Postgres service exactly, or paste the real connection string.'
+    );
+  }
+  try {
+    new URL(env.DATABASE_URL);
+  } catch {
+    throw new Error('DATABASE_URL is not a valid connection URL (expected postgres://user:pass@host:port/db)');
+  }
   const isProd = env.NODE_ENV === 'production';
   if (isProd && env.ADMIN_PASSWORD.length < 10) {
     throw new Error('ADMIN_PASSWORD must be at least 10 characters in production');
