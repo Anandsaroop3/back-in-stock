@@ -32,9 +32,10 @@ Items 1 to 3 were found by tests I wrote, not by luck: the value of the suite is
 
 - **Live round trip against the real harness (local app, throwaway DB):** created a request, restocked the item from the harness dashboard, and the reconcile sweep (no webhook, since localhost is unreachable) emailed the customer once; the harness inbox shows it as accepted, with the catalogue name in the subject.
 
+- **Live webhooks via a tunnel:** with the app URL saved in the harness dashboard, its simulation delivered real webhooks. One event was delivered twice at the same instant: the harness log shows HTTP 200 `accepted` and HTTP 200 `duplicate`, and the inbox shows exactly one email for it. A bad-secret webhook was rejected with 401. Tunnel latency made responses about 1 s.
+
 ## What is NOT verified (please read)
 
-- **Real webhooks have not been received yet.** The harness cannot reach localhost, so the webhook path was only tested with my own mocks. It becomes live once the app has a public URL (tunnel or Railway) saved in the harness dashboard.
 - **Not deployed yet.** Railway needs your account; see DEPLOY.md.
 - **Email rendering was checked in a browser only**, not in Gmail, Outlook or Apple Mail. The markup is conservative (tables, inline styles, plain-text twin), but I have not seen it in those clients.
 - The sign-up storm test was added after the fix and passes; I did not re-run it against the unfixed code to prove it would have failed there.
