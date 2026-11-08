@@ -5,7 +5,7 @@ Total time: about 15 minutes. Everything marked **You** needs your accounts or s
 ## 0. Prerequisites (You)
 
 - A GitHub account and a Railway account (https://railway.app, free trial is enough).
-- Your harness sign-up done: open https://harness-production-e601.up.railway.app, enter invite code `stock-e11d21`, and copy the five values it shows you: `STOCK_API_URL`, `STOCK_API_KEY`, `RESEND_API_KEY`, `RESEND_BASE_URL`, `WEBHOOK_SECRET`.
+- Your harness sign-up done: open https://harness-production-e601.up.railway.app, enter the invite code from the job post, and copy the five values it shows you: `STOCK_API_URL`, `STOCK_API_KEY`, `RESEND_API_KEY`, `RESEND_BASE_URL`, `WEBHOOK_SECRET`.
 - Choose an `ADMIN_PASSWORD` (10 or more characters). A passphrase works well.
 
 ## 1. Run it locally first (You, about 3 minutes)
